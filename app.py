@@ -30,11 +30,13 @@ maxclients = int(settings['maxclients'])
 
 #######################################
 
-if update_offsets == 1:
-    offsets = get('https://raw.githubusercontent.com/a2x/cs2-dumper/main/generated/offsets.json').json()
-    clientdll = get('https://raw.githubusercontent.com/a2x/cs2-dumper/main/generated/client.dll.json').json()
-else:
+try:
+    offsets = get('https://raw.githubusercontent.com/a2x/cs2-dumper/main/output/offsets.json').json()
+    clientdll = get('https://raw.githubusercontent.com/a2x/cs2-dumper/main/output/client.dll.json').json()
+except Exception as e:
+    print(e)
     try:
+        print('[-]Unable to parse offsets. Using from current folder')
         with open(f'client.dll.json', 'r') as a:
             clientdll = json.load(a)
         with open(f'offsets.json', 'r') as b:
@@ -47,28 +49,28 @@ else:
 #######################################
 
 maps_with_split = ['de_nuke','de_vertigo']
-dwEntityList = offsets['client_dll']['data']['dwEntityList']['value']
-dwLocalPlayerPawn = offsets['client_dll']['data']['dwLocalPlayerPawn']['value']
-m_iPawnHealth = clientdll['CCSPlayerController']['data']['m_iPawnHealth']['value']
-m_iPawnArmor = clientdll['CCSPlayerController']['data']['m_iPawnArmor']['value']
-m_bPawnIsAlive = clientdll['CCSPlayerController']['data']['m_bPawnIsAlive']['value']
-m_angEyeAngles = clientdll['C_CSPlayerPawnBase']['data']['m_angEyeAngles']['value']
-m_iTeamNum = clientdll['C_BaseEntity']['data']['m_iTeamNum']['value']
-m_hPlayerPawn = clientdll['CCSPlayerController']['data']['m_hPlayerPawn']['value']
-m_vOldOrigin = clientdll['C_BasePlayerPawn']['data']['m_vOldOrigin']['value']
-m_iIDEntIndex = clientdll['C_CSPlayerPawnBase']['data']['m_iIDEntIndex']['value']
-m_iHealth = clientdll['C_BaseEntity']['data']['m_iHealth']['value']
-mapNameVal = offsets['matchmaking_dll']['data']['dwGameTypes_mapName']['value']
-m_bIsDefusing = clientdll['C_CSPlayerPawnBase']['data']['m_bIsDefusing']['value']
-m_bPawnHasDefuser = clientdll['CCSPlayerController']['data']['m_bPawnHasDefuser']['value']
-m_iCompTeammateColor = clientdll['CCSPlayerController']['data']['m_iCompTeammateColor']['value']
-m_flFlashOverlayAlpha = clientdll['C_CSPlayerPawnBase']['data']['m_flFlashOverlayAlpha']['value']
-m_iszPlayerName = clientdll['CBasePlayerController']['data']['m_iszPlayerName']['value']
-m_pClippingWeapon = clientdll['C_CSPlayerPawnBase']['data']['m_pClippingWeapon']['value']
+
+dwEntityList = offsets['client.dll']['dwEntityList']
+mapNameVal = offsets['matchmaking.dll']['dwGameTypes_mapName']
+dwLocalPlayerPawn = offsets['client.dll']['dwLocalPlayerPawn']
+
+m_iPawnHealth = clientdll['client.dll']['classes']['CCSPlayerController']['fields']['m_iPawnHealth']
+m_iPawnArmor = clientdll['client.dll']['classes']['CCSPlayerController']['fields']['m_iPawnArmor']
+m_bPawnIsAlive = clientdll['client.dll']['classes']['CCSPlayerController']['fields']['m_bPawnIsAlive']
+m_angEyeAngles = clientdll['client.dll']['classes']['C_CSPlayerPawnBase']['fields']['m_angEyeAngles']
+m_iTeamNum = clientdll['client.dll']['classes']['C_BaseEntity']['fields']['m_iTeamNum']
+m_hPlayerPawn = clientdll['client.dll']['classes']['CCSPlayerController']['fields']['m_hPlayerPawn']
+m_vOldOrigin = clientdll['client.dll']['classes']['C_BasePlayerPawn']['fields']['m_vOldOrigin']
+m_iIDEntIndex = clientdll['client.dll']['classes']['C_CSPlayerPawnBase']['fields']['m_iIDEntIndex']
+m_iHealth = clientdll['client.dll']['classes']['C_BaseEntity']['fields']['m_iHealth']
+m_bIsDefusing = clientdll['client.dll']['classes']['C_CSPlayerPawnBase']['fields']['m_bIsDefusing']
+m_bPawnHasDefuser = clientdll['client.dll']['classes']['CCSPlayerController']['fields']['m_bPawnHasDefuser']
+m_iCompTeammateColor = clientdll['client.dll']['classes']['CCSPlayerController']['fields']['m_iCompTeammateColor']
+m_flFlashOverlayAlpha = clientdll['client.dll']['classes']['C_CSPlayerPawnBase']['fields']['m_flFlashOverlayAlpha']
+m_iszPlayerName = clientdll['client.dll']['classes']['CBasePlayerController']['fields']['m_iszPlayerName']
+m_pClippingWeapon = clientdll['client.dll']['classes']['C_CSPlayerPawnBase']['fields']['m_pClippingWeapon']
 
 print('[+] offsets parsed')
-
-#https://github.com/a2x/cs2-dumper/tree/main/generated
 
 #######################################
 
@@ -78,65 +80,17 @@ global_entity_list = []
 playerpawn = 0 
 
 
-def get_weapon_name(weapon_id):
-    weapon_names = {
-        59: "T knife",
-        42: "CT knife",
-        1: "deagle",
-        2: "elite",
-        3: "fiveseven",
-        4: "glock",
-        64: "revolver",
-        32: "p2000",
-        36: "p250",
-        #61: "usp-s",
-        262205: "usp-s",
-        30: "tec9",
-        63: "cz75a",
-        17: "mac10",
-        24: "ump45",
-        26: "bizon",
-        33: "mp7",
-        34: "mp9",
-        19: "p90",
-        13: "galil",
-        10: "famas",
-        60: "m4a1_silencer",
-        16: "m4a4",
-        8: "aug",
-        39: "sg556",
-        7: "ak47",
-        11: "g3sg1",
-        38: "scar20",
-        9: "awp",
-        40: "ssg08",
-        25: "xm1014",
-        29: "sawedoff",
-        27: "mag7",
-        35: "nova",
-        28: "negev",
-        14: "m249",
-        31: "zeus",
-        43: "flashbang",
-        44: "hegrenade",
-        45: "smokegrenade",
-        46: "molotov",
-        47: "decoy",
-        48: "incgrenade",
-        49: "c4"
-    }
-
-    return weapon_names.get(weapon_id, "Unknown weapon")
 
 
 def get_weapon(ptr):
     try:
         b1 = struct.unpack("<Q", cs2.memory.read(ptr + m_pClippingWeapon, 8, memprocfs.FLAG_NOCACHE))[0]
-        b2 = struct.unpack("<I", cs2.memory.read(b1 + 0x1BA + 0x50 + 0x1098, 4, memprocfs.FLAG_NOCACHE))[0]
-        weapon_id = get_weapon_name(b2)
+        base = struct.unpack("<Q", cs2.memory.read(b1 + 0x10, 8, memprocfs.FLAG_NOCACHE))[0]
+        data = struct.unpack("<Q", cs2.memory.read(base + 0x20, 8, memprocfs.FLAG_NOCACHE))[0]
+        finall = read_string_memory(data)
+        return str(finall)[7:]
     except:
-        return None
-    return weapon_id
+        return 'None'
 
 
 def world_to_minimap(x, y, pos_x, pos_y, scale, map_image, screen, zoom_scale, rotation_angle):
@@ -145,7 +99,7 @@ def world_to_minimap(x, y, pos_x, pos_y, scale, map_image, screen, zoom_scale, r
         image_y = int((y - pos_y) * screen.get_height() / (map_image.get_height() * scale * zoom_scale))
         center_x, center_y = screen_height // 2, screen_width // 2
         image_x, image_y = rotate_point((center_x, center_y), (image_x, image_y), rotation_angle)
-        return int(image_x * 0.85), int(image_y * 0.95)
+        return image_x * 0.85, image_y * 0.95
     except:
         return 0,0
 
@@ -335,8 +289,7 @@ while running:
         new_height = int(screen_height * 0.95)
         rotated_map_image = pygame.transform.scale(rotated_map_image, (new_width, new_height))
         screen.blit(rotated_map_image, (0, 0))
-        manager.draw_ui(screen)
-        wepname = []    
+        manager.draw_ui(screen) 
         try:
             playerpawn = struct.unpack("<Q", cs2.memory.read(client_base + dwLocalPlayerPawn, 8, memprocfs.FLAG_NOCACHE))[0]
             playerTeam = struct.unpack("<I", cs2.memory.read(playerpawn + m_iTeamNum, 4, memprocfs.FLAG_NOCACHE))[0]
@@ -407,9 +360,6 @@ while running:
                                     text_surface.set_alpha(255)
                                 if flash_alpha == 255:
                                     pygame.draw.circle(screen, (255, 255, 255, flash_alpha), (transformed_x, transformed_y), circle_size)
-                                name = read_string_memory(EntityAddress + m_iszPlayerName)
-                                weapon = get_weapon(entity_id)
-                                wepname.append((name, weapon))
                         elif teammate_setting == 1:
                             if team == playerTeam:
                                 pygame.draw.polygon(screen, triangle_color, [(triangle_top_x, triangle_top_y), (triangle_left_x, triangle_left_y), (triangle_right_x, triangle_right_y)])
@@ -434,8 +384,6 @@ while running:
                                 if flash_alpha == 255:
                                     pygame.draw.circle(screen, (255, 255, 255, flash_alpha), (transformed_x, transformed_y), circle_size)
                                 name = read_string_memory(EntityAddress + m_iszPlayerName)
-                                weapon = get_weapon(entity_id)
-                                wepname.append((name, weapon))
                         elif teammate_setting == 0:
                             if entity_id == playerpawn:
                                 pygame.draw.polygon(screen, triangle_color, [(triangle_top_x, triangle_top_y), (triangle_left_x, triangle_left_y), (triangle_right_x, triangle_right_y)])
@@ -452,8 +400,6 @@ while running:
                                 text_surface = font.render(f'  {Hp}', True, (0, 255, 0) if Hp > 30 else (255, 0, 0))
                                 screen.blit(text_surface, (transformed_x, transformed_y))
                                 name = read_string_memory(EntityAddress + m_iszPlayerName)
-                                weapon = get_weapon(entity_id)
-                                wepname.append((name, weapon))
                         if isdefusing == 1:
                             hasdefuser = struct.unpack("?", cs2.memory.read(EntityAddress + m_bPawnHasDefuser, 1, memprocfs.FLAG_NOCACHE))[0]
                             if hasdefuser:
@@ -469,10 +415,5 @@ while running:
             print(e)
         screenx = screen_width-200
         screeny = 60
-        for name, weapon in wepname:
-            stringg = f'{name} | {weapon}'
-            text_surfacee = fontt.render(f'{stringg}', True, (255, 255, 255))
-            screen.blit(text_surfacee, (screenx, screeny))
-            screeny = screeny + 15
         pygame.display.flip()
 pygame.quit()
