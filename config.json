@@ -1,11 +1,11 @@
 {
-"triangle_length": 13,
-"circle_size": 7,
+"triangle_length": 15,
+"circle_size": 9,
 "hp_font_size": 18,
 "rot_angle": 0,
 "cross_size": 10,
 "teammates": 2,
 "altgirlpic_instead_nomappic": 0,
 "update_offsets": 1,
-"maxclients": 10
+"maxclients": 32
 }
